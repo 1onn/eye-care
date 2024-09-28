@@ -1,0 +1,98 @@
+/* Heading.css */
+.header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 50px;
+  }
+  
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .header-Logo-container {
+    flex-grow: 2;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .header-img {
+    width: 150px;
+    height: auto;
+  }
+  
+  .header-button {
+    text-decoration: none;
+    background-color: #34CB78;
+    color: white;
+    border: 0px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .header-button-right {
+    margin-left: auto;
+  }
+  
+  .header-nav {
+    display: flex;
+    gap: 20px;
+    flex-grow: 2;
+    padding: 15px;
+    justify-content: center;
+  }
+  
+  .header-nav a {
+    text-decoration: none;
+    color: black;
+    font-size: 16px;
+  }
+  
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .dropdown-toggle {
+    background-color: #34CB78; /* Green background */
+    color: white; /* White text */
+    padding: 10px 20px; /* Padding */
+    border: none; /* Remove border */
+    border-radius: 25px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+  }
+  
+  .dropdown-menu {
+    display: block;
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    margin-top: 5px;
+    border-radius: 4px;
+  }
+  
+  .dropdown-item {
+    display: block;
+    color:black ;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd; /* Optional: adds a bottom border to items */
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f1f1f1; /* Light grey background on hover */
+  }
+  
+  .dropdown-item:last-child {
+    border-bottom: none; /* Remove border from last item */
+  }

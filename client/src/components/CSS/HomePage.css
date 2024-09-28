@@ -1,0 +1,246 @@
+/* HomePage.css */
+body, html {
+  height: 100%;
+  margin: 0;
+}
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-wrap {
+  flex: 1;
+}
+
+.container-home {
+  display: flex;
+  flex-direction: column;
+  background-image: url('../Images/background Homepage.svg');
+  background-color: rgba(20, 22, 21, 0.5); 
+  background-blend-mode: overlay; /* Ensures the overlay applies to the background image */
+  color: white;
+  text-align: center;
+  padding: 50px 50px;
+  height: 250px;
+}
+
+.container-Heading {
+  margin: 0;
+  text-align: center; /* Center align for consistency */
+  font-size: 46px;
+  font-weight: normal;
+  padding-top: 35px;
+}
+
+.opt {
+  color: #70fff1;
+  font-weight: bolder;
+}
+
+.Search-Bar {
+  width: 50rem;
+  height: 2.5rem;
+  padding: 10px;
+  margin: 15px;
+  border-radius: 25px;
+} 
+
+.container2 {
+  padding-top: 45px;
+  text-align: center;
+  font-weight: lighter;    
+}
+
+.Vid-List {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.List {
+  text-align: left;
+  list-style-type: none;
+  padding-top: 25px;
+  line-height: 2;
+  font-size: 18px;
+  padding-bottom: 15px;
+}
+
+.List li {
+  padding-left: 30px; 
+  margin: 15px;
+  background: url('../Images/BulletPoint.svg') no-repeat left center;
+  background-size: 25px 25px; 
+}
+
+.Oct-desc {
+  width: 400px;
+  text-align: justify;
+}
+
+/* Media Queries */
+
+/* 4k Screen */
+@media only screen and (min-width: 2560px) {
+  .container-home {
+    display: flex;
+    flex-direction: column;
+    background-image: url('../Images/background Homepage.svg');
+    background-color: rgba(20, 22, 21, 0.5); 
+    background-blend-mode: overlay; /* Ensures the overlay applies to the background image */
+    color: white;
+    text-align: center;
+    height: 400px;
+    padding: 70px 100px;
+  }
+
+  .container-Heading {
+      font-size: 56px;
+      padding-top: 50px;
+  }
+
+  .Search-Bar {
+      width: 70rem;
+      height: 3rem;
+  }
+
+  .Oct-desc {
+      width: 600px;
+      font-size: 20px;
+  }
+
+  .List {
+      font-size: 20px;
+  }
+
+  .List li {
+      background-size: 30px 30px;
+  }
+}
+
+/* Laptop L Screen */
+@media only screen and (min-width: 1440px) and (max-width: 2559px) {
+  .container-home {
+    display: flex;
+    flex-direction: column;
+    background-image: url('../Images/background Homepage.svg');
+    background-color: rgba(20, 22, 21, 0.5); 
+    background-blend-mode: overlay; /* Ensures the overlay applies to the background image */
+    color: white;
+    text-align: center;
+    height: 350px;
+    padding: 60px 80px;
+  }
+
+  .container-Heading {
+      font-size: 50px;
+      padding-top: 45px;
+  }
+
+  .Search-Bar {
+      width: 60rem;
+      height: 2.8rem;
+  }
+
+  .Oct-desc {
+      width: 500px;
+      font-size: 18px;
+  }
+
+  .List {
+      font-size: 18px;
+  }
+
+  .List li {
+      background-size: 25px 25px;
+  }
+}
+
+/* Laptop Screen */
+@media only screen and (min-width: 1024px) and (max-width: 1439px) {
+  .container-home {
+    display: flex;
+    flex-direction: column;
+    background-image: url('../Images/background Homepage.svg');
+    background-color: rgba(20, 22, 21, 0.5); 
+    background-blend-mode: overlay; /* Ensures the overlay applies to the background image */
+    color: white;
+    text-align: center;
+    height: 300px;
+      padding: 50px 70px;
+  }
+
+  .container-Heading {
+      font-size: 44px;
+      padding-top: 40px;
+  }
+
+  .Search-Bar {
+      width: 50rem;
+      height: 2.5rem;
+  }
+
+  .Oct-desc {
+      width: 450px;
+      font-size: 16px;
+  }
+
+  .List {
+      font-size: 16px;
+  }
+
+  .List li {
+      background-size: 22px 22px;
+  }
+}
+
+/* Tablet Screen */
+@media only screen and (min-width: 768px) and (max-width: 1023px) {
+  .container-home {
+    display: flex;
+    flex-direction: column;
+    background-image: url('../Images/background Homepage.svg');
+    background-color: rgba(20, 22, 21, 0.5); 
+    background-blend-mode: overlay; /* Ensures the overlay applies to the background image */
+    color: white;
+    text-align: center;
+      height: 250px;
+      padding: 40px 50px;
+  }
+
+  .container-Heading {
+      font-size: 38px;
+      padding-top: 35px;
+  }
+
+  .Search-Bar {
+      width: 40rem;
+      height: 2.5rem;
+  }
+
+  .Vid-List {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .Oct-desc {
+      width: 350px;
+      font-size: 14px;
+  }
+
+  .List {
+      font-size: 14px;
+  }
+
+  .List li {
+      padding-left: 25px;
+      margin: 10px;
+      background-size: 20px 20px;
+  }
+}

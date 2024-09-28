@@ -1,0 +1,48 @@
+.appointments-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+.appointment-card {
+    width: 70%;
+    border: 1px solid #000;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    border-radius: 8px;
+  }
+  
+  .appointment-info {
+    flex: 1;
+  }
+  
+  .appointment-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .inbox-button {
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    text-align: center;
+    border: none;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+
+  .inbox-button {
+    background-color: #1ecc52;
+  }
+  
+  .inbox-button:hover {
+    background-color: #F5FEFD;
+    color: #1ecc52;
+  }
+  

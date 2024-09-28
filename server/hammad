@@ -1,0 +1,14 @@
+- store: 
+store owner: ad post,  logged user (info) {generate email for confirmation} 
+user: order ->  
+
+----------------------------------------
+code cleaning.
+redesign basic.
+responsive.
+header, footer.
+model connection and result page.
+Login authentication. 
+-bootstrap +tailwind.
+buyer seller store.
+----------------------------------------
