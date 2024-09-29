@@ -1,11 +1,8 @@
 // This script deletes all the tables existing in the database and creates new tables with the required schema.
 
-
 const pool = require("./database");
 
 const initDb = async () => {
-  // Uncomment the code below to drop all tables
-  
   const dropTables = async () => {
     try {
       await pool.query(`
@@ -21,7 +18,6 @@ const initDb = async () => {
       console.error("Error dropping tables:", error);
     }
   };
-  
 
   const createPatientTable = async () => {
     try {
@@ -38,8 +34,10 @@ const initDb = async () => {
           description TEXT,
           profile_pic BYTEA,
           profile_pic_type VARCHAR,
-          token VARCHAR
-        )
+          token VARCHAR,
+          reset_token VARCHAR(255),
+          reset_token_expiry TIMESTAMP
+        );
       `);
       console.log("Patient table created.");
     } catch (error) {
@@ -71,8 +69,10 @@ const initDb = async () => {
           profile_pic BYTEA,
           profile_pic_type VARCHAR,
           degree_pic BYTEA,
-          degree_pic_type VARCHAR
-        )
+          degree_pic_type VARCHAR,
+          reset_token VARCHAR(255),
+          reset_token_expiry TIMESTAMP
+        );
       `);
       console.log("Doctors table created.");
     } catch (error) {
@@ -97,8 +97,10 @@ const initDb = async () => {
           password VARCHAR,
           description TEXT,
           profile_pic BYTEA,
-          profile_pic_type VARCHAR
-        )
+          profile_pic_type VARCHAR,
+          reset_token VARCHAR(255),
+          reset_token_expiry TIMESTAMP
+        );
       `);
       console.log("Partners table created.");
     } catch (error) {
@@ -119,7 +121,7 @@ const initDb = async () => {
           description TEXT,
           FOREIGN KEY (doctor_id) REFERENCES doctors (doctor_id),
           FOREIGN KEY (patient_id) REFERENCES patient (patient_id)
-        )
+        );
       `);
       console.log("Appointments table created.");
     } catch (error) {
@@ -136,7 +138,7 @@ const initDb = async () => {
           blog_description TEXT,
           published_at TIMESTAMP,
           blog_image BYTEA
-        )
+        );
       `);
       console.log("Blogs table created.");
     } catch (error) {
@@ -152,7 +154,7 @@ const initDb = async () => {
           ex_title VARCHAR,
           ex_description TEXT,
           ex_pic BYTEA
-        )
+        );
       `);
       console.log("Exercise table created.");
     } catch (error) {
@@ -174,5 +176,3 @@ const initDb = async () => {
 };
 
 initDb();
-
-module.exports = initDb;

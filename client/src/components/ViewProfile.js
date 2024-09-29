@@ -27,13 +27,16 @@ function ViewProfile() {
         const data = await response.json();
         setUser(data);
         setFormData(data);
-        
+
         if (data.profile_pic) {
-          const imageResponse = await fetch(`/api/patient/profile-pic/${data.patient_id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const imageResponse = await fetch(
+            `/api/patient/profile-pic/${data.patient_id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
           const imageBlob = await imageResponse.blob();
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -101,24 +104,71 @@ function ViewProfile() {
   return (
     <div>
       <DHeading user={user} />
-      <div className='profile-background'>
+      <div className="profile-background">
         <div className="profile-container">
           <div className="profile-header">
             {profilePic ? (
-              <img src={profilePic} alt="Profile Picture" className="profile-pic" />
+              <img
+                src={profilePic}
+                alt="Profile Picture"
+                className="profile-pic"
+              />
             ) : (
-              <img src="/path/to/default/profile/picture.jpg" alt="Profile Picture" className="profile-pic" />
+              <img
+                src="/path/to/default/profile/picture.jpg"
+                alt="Profile Picture"
+                className="profile-pic"
+              />
             )}
             <div className="profile-info">
               {editMode ? (
                 <>
-                  <input type="file" name="profile_pic" onChange={handleFileChange} />
-                  <input type="text" name="fname" value={formData.fname} className="Doc-input" onChange={handleChange} />
-                  <input type="text" name="lname" value={formData.lname} className="Doc-input" onChange={handleChange} />
-                  <input type="email" name="email" value={formData.email} className="Doc-input" onChange={handleChange} />
-                  <input type="password" name="password" placeholder="New Password" className="Doc-input" onChange={handleChange} />
-                  <input type="password" name="passwordConfirm" placeholder="Confirm Password" className="Doc-input" onChange={handleChange} />
-                  <select name="gender" className="Doc-input" value={formData.gender} onChange={handleChange}>
+                  <input
+                    type="file"
+                    name="profile_pic"
+                    onChange={handleFileChange}
+                  />
+                  <input
+                    type="text"
+                    name="fname"
+                    value={formData.fname}
+                    className="Doc-input"
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="text"
+                    name="lname"
+                    value={formData.lname}
+                    className="Doc-input"
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    className="Doc-input"
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="New Password"
+                    className="Doc-input"
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="password"
+                    name="passwordConfirm"
+                    placeholder="Confirm Password"
+                    className="Doc-input"
+                    onChange={handleChange}
+                  />
+                  <select
+                    name="gender"
+                    className="Doc-input"
+                    value={formData.gender}
+                    onChange={handleChange}
+                  >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                   </select>
@@ -126,14 +176,27 @@ function ViewProfile() {
               ) : (
                 <>
                   <h2>{`${user.fname} ${user.lname}`}</h2>
-                  <p><b>Email:</b> {user.email}</p>
-                  <p><b>Gender:</b> {user.gender}</p>
+                  <p>
+                    <b>Email:</b> {user.email}
+                  </p>
+                  <p>
+                    <b>Gender:</b> {user.gender}
+                  </p>
                 </>
               )}
             </div>
           </div>
-          <button onClick={() => setEditMode(!editMode)} className="edit-button">{editMode ? "Cancel" : "Edit"}</button>
-          {editMode && <button onClick={handleSave} className="save-button">Save</button>}
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className="edit-button"
+          >
+            {editMode ? "Cancel" : "Edit"}
+          </button>
+          {editMode && (
+            <button onClick={handleSave} className="save-button">
+              Save
+            </button>
+          )}
           <hr />
           <div className="profile-details">
             <div className="section">
@@ -143,11 +206,22 @@ function ViewProfile() {
               ) : (
                 appointments.map((appointment, index) => (
                   <div key={index} className="appointment-card">
-                    <p><b>Doctor:</b> {appointment.doctor_name}</p>
-                    <p><b>Specialization:</b> {appointment.specialization.join(', ')}</p>
-                    <p><b>Issue Description:</b> {appointment.description}</p>
-                    <p><b>Fee:</b> {appointment.fee} PKR</p>
-                    <p><b>Appointment Time:</b> {appointment.appointment_time}</p>
+                    <p>
+                      <b>Doctor:</b> {appointment.doctor_name}
+                    </p>
+                    <p>
+                      <b>Specialization:</b>{" "}
+                      {appointment.specialization.join(", ")}
+                    </p>
+                    <p>
+                      <b>Issue Description:</b> {appointment.description}
+                    </p>
+                    <p>
+                      <b>Fee:</b> {appointment.fee} PKR
+                    </p>
+                    <p>
+                      <b>Appointment Time:</b> {appointment.appointment_time}
+                    </p>
                   </div>
                 ))
               )}
@@ -156,9 +230,14 @@ function ViewProfile() {
             <div className="section">
               <h3 className="about-section">Description</h3>
               {editMode ? (
-                <textarea name="description" value={formData.description} className="Doc-description" onChange={handleChange}></textarea>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  className="Doc-description"
+                  onChange={handleChange}
+                ></textarea>
               ) : (
-                <p >{user.description}</p>
+                <p>{user.description}</p>
               )}
             </div>
           </div>

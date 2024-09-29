@@ -2,8 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const pool = require("./database");
-const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const multer = require("multer");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -11,7 +12,6 @@ require("dotenv").config();
 const app = express();
 
 // Middleware setup
-app.use(bodyParser.json());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cors());
@@ -20,19 +20,23 @@ app.use(cors());
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB limit for file uploads
 
-// Static file hosting
+// Static file hosting (serve in both development and production)
 app.use(express.static(path.join(__dirname, "../client/build")));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Authentication middleware to verify JWT
 const authenticateToken = (req, res, next) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
   if (!token)
     return res.status(401).json({ error: "Unauthorized: No token provided" });
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: "Forbidden: Invalid token" });
+    if (err) {
+      console.error("Token verification failed:", err);
+      return res.status(403).json({ error: "Forbidden: Invalid token" });
+    }
     req.user = user;
     next();
   });
@@ -68,6 +72,15 @@ app.post("/api/signuppatient", async (req, res) => {
       return res
         .status(400)
         .json({ error: "Phone number must be 11 digits long" });
+    }
+
+    // Check if email already exists
+    const existingUser = await pool.query(
+      "SELECT * FROM patient WHERE email = $1",
+      [email]
+    );
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: "Email already in use" });
     }
 
     // Hashing sensitive information
@@ -129,7 +142,7 @@ app.post(
 
       // Convert arrays to PostgreSQL array format
       const formatArray = (arr) => {
-        return arr.length === 0 ? '{}' : `"{${arr.join('","')}}"`; // Handle empty arrays
+        return arr.length === 0 ? "{}" : `"{${arr.join('","')}}"`; // Handle empty arrays
       };
 
       const profile_pic = req.files["profile_pic"]
@@ -145,13 +158,22 @@ app.post(
           .json({ error: "Password must be at least 6 characters long" });
       }
 
+      // Check if email already exists
+      const existingUser = await pool.query(
+        "SELECT * FROM doctors WHERE email = $1",
+        [email]
+      );
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({ error: "Email already in use" });
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const newDoctor = await pool.query(
         `INSERT INTO doctors (name, phoneno, cnic, dob, email, password, profile_pic, degree_pic,
-        experience_years, experience_title, current_hospital, fee, description,
-        available_start_time, available_end_time, specialization, services)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
+            experience_years, experience_title, current_hospital, fee, description,
+            available_start_time, available_end_time, specialization, services)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
         [
           name,
           phoneno,
@@ -188,7 +210,6 @@ app.post(
   }
 );
 
-
 // Partner signup route
 app.post(
   "/api/signuppartner",
@@ -211,13 +232,22 @@ app.post(
         ? req.files["SECP_certificate_pic"][0].buffer
         : null;
 
+      // Check if email already exists
+      const existingUser = await pool.query(
+        "SELECT * FROM partners WHERE email = $1",
+        [email]
+      );
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({ error: "Email already in use" });
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
       const hashedCnic = await bcrypt.hash(cnic, 10);
       const hashedOwnerPhoneno = await bcrypt.hash(owner_phoneno, 10);
 
       const newPartner = await pool.query(
         `INSERT INTO partners (store_name, store_phoneno, owner_name, owner_phoneno, store_address, SECP_certificate_pic, cnic, email, password, description)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
         [
           store_name,
           store_phoneno,
@@ -288,6 +318,7 @@ app.post("/api/loginpatient", async (req, res) => {
   }
 });
 
+// Doctor login route
 app.post("/api/logindoctor", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -333,6 +364,7 @@ app.post("/api/logindoctor", async (req, res) => {
   }
 });
 
+// Partner login route
 app.post("/api/loginpartner", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -377,7 +409,7 @@ app.post("/api/loginpartner", async (req, res) => {
   }
 });
 
-// Protected route example
+// Protected route to get user profile
 app.get("/api/user", authenticateToken, async (req, res) => {
   try {
     let user;
@@ -399,13 +431,21 @@ app.get("/api/user", authenticateToken, async (req, res) => {
 
     if (user.rows.length === 0)
       return res.status(404).json({ error: "User not found" });
-    res.json(user.rows[0]);
+
+    // Exclude sensitive information
+    const userData = { ...user.rows[0] };
+    delete userData.password;
+    delete userData.reset_token;
+    delete userData.reset_token_expiry;
+
+    res.json(userData);
   } catch (err) {
     console.error("Error fetching user details", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
+// Update Doctor Profile
 app.put(
   "/api/updateDoctorProfile",
   authenticateToken,
@@ -437,7 +477,7 @@ app.put(
 
       const updatedDoctor = await pool.query(
         `UPDATE doctors SET name = $1, current_hospital = $2, fee = $3, experience_years = $4, experience_title = $5, available_start_time = $6, available_end_time = $7, education = $8, description = $9, specialization = $10, services = $11, profile_pic = COALESCE($12, profile_pic), profile_pic_type = COALESCE($13, profile_pic_type)
-      WHERE doctor_id = $14 RETURNING *`,
+            WHERE doctor_id = $14 RETURNING *`,
         [
           name,
           current_hospital,
@@ -464,6 +504,7 @@ app.put(
   }
 );
 
+// Get Doctor Profile Picture
 app.get(
   "/api/doctor/profile-pic/:doctorId",
   authenticateToken,
@@ -492,6 +533,7 @@ app.get(
   }
 );
 
+// Get All Doctors
 app.get("/api/doctors", async (req, res) => {
   try {
     const doctors = await pool.query(
@@ -504,6 +546,7 @@ app.get("/api/doctors", async (req, res) => {
   }
 });
 
+// Get Doctor by ID
 app.get("/api/doctors/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -535,15 +578,16 @@ app.get("/api/doctors/:id", async (req, res) => {
   }
 });
 
+// Get Appointments for a Doctor
 app.get("/api/doctor/appointments", authenticateToken, async (req, res) => {
   try {
     const doctor_id = req.user.id;
     const appointments = await pool.query(
       `SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.description, a.status, 
-              p.fname AS patient_name, p.lname AS patient_lname
-       FROM appointments a 
-       JOIN patient p ON a.patient_id = p.patient_id 
-       WHERE a.doctor_id = $1`,
+                  p.fname AS patient_fname, p.lname AS patient_lname, p.gender
+           FROM appointments a 
+           JOIN patient p ON a.patient_id = p.patient_id 
+           WHERE a.doctor_id = $1`,
       [doctor_id]
     );
 
@@ -554,6 +598,7 @@ app.get("/api/doctor/appointments", authenticateToken, async (req, res) => {
   }
 });
 
+// Update Patient Profile
 app.put(
   "/api/updatePatientProfile",
   authenticateToken,
@@ -575,12 +620,12 @@ app.put(
 
       const updatedUser = await pool.query(
         `UPDATE patient SET 
-        fname = $1, lname = $2, email = $3, 
-        password = COALESCE($4, password), 
-        gender = $5, description = $6, 
-        profile_pic = COALESCE($7, profile_pic), 
-        profile_pic_type = COALESCE($8, profile_pic_type)
-      WHERE patient_id = $9 RETURNING *`,
+                fname = $1, lname = $2, email = $3, 
+                password = COALESCE($4, password), 
+                gender = $5, description = $6, 
+                profile_pic = COALESCE($7, profile_pic), 
+                profile_pic_type = COALESCE($8, profile_pic_type)
+              WHERE patient_id = $9 RETURNING *`,
         [
           fname,
           lname,
@@ -602,6 +647,7 @@ app.put(
   }
 );
 
+// Get Patient Profile Picture
 app.get(
   "/api/patient/profile-pic/:patientId",
   authenticateToken,
@@ -630,6 +676,7 @@ app.get(
   }
 );
 
+// Update Partner Profile
 app.put(
   "/api/updatePartnerProfile",
   authenticateToken,
@@ -670,14 +717,14 @@ app.put(
 
       const updatedPartner = await pool.query(
         `UPDATE partners SET 
-        store_name = $1, store_phoneno = $2, owner_name = $3, owner_phoneno = $4, store_address = $5, 
-        email = $6, password = COALESCE($7, password), 
-        description = $8, cnic = $9,
-        profile_pic = COALESCE($10, profile_pic), 
-        profile_pic_type = COALESCE($11, profile_pic_type),
-        SECP_certificate_pic = COALESCE($12, SECP_certificate_pic),
-        SECP_certificate_pic_type = COALESCE($13, SECP_certificate_pic_type)
-      WHERE partner_id = $14 RETURNING *`,
+                store_name = $1, store_phoneno = $2, owner_name = $3, owner_phoneno = $4, store_address = $5, 
+                email = $6, password = COALESCE($7, password), 
+                description = $8, cnic = $9,
+                profile_pic = COALESCE($10, profile_pic), 
+                profile_pic_type = COALESCE($11, profile_pic_type),
+                SECP_certificate_pic = COALESCE($12, SECP_certificate_pic),
+                SECP_certificate_pic_type = COALESCE($13, SECP_certificate_pic_type)
+              WHERE partner_id = $14 RETURNING *`,
         [
           store_name,
           store_phoneno,
@@ -704,6 +751,7 @@ app.put(
   }
 );
 
+// Get Partner Profile Picture
 app.get(
   "/api/partner/profile-pic/:partnerId",
   authenticateToken,
@@ -732,9 +780,7 @@ app.get(
   }
 );
 
-//Booking related
-
-// Route to book an appointment
+// Book an Appointment
 app.post("/api/bookAppointment", authenticateToken, async (req, res) => {
   try {
     const { doctor_id, date, time, description } = req.body;
@@ -742,7 +788,7 @@ app.post("/api/bookAppointment", authenticateToken, async (req, res) => {
 
     const newAppointment = await pool.query(
       `INSERT INTO appointments (doctor_id, patient_id, appointment_date, appointment_time, description) 
-          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+              VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [doctor_id, patient_id, date, time, description]
     );
 
@@ -753,12 +799,16 @@ app.post("/api/bookAppointment", authenticateToken, async (req, res) => {
   }
 });
 
-// Route to get appointments for a patient
+// Get Appointments for a Patient
 app.get("/api/patient/appointments", authenticateToken, async (req, res) => {
   try {
     const patient_id = req.user.id;
     const appointments = await pool.query(
-      "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.description, a.status, d.name AS doctor_name, d.specialization FROM appointments a JOIN doctors d ON a.doctor_id = d.doctor_id WHERE a.patient_id = $1",
+      `SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.description, a.status, 
+                  d.name AS doctor_name, d.specialization 
+           FROM appointments a 
+           JOIN doctors d ON a.doctor_id = d.doctor_id 
+           WHERE a.patient_id = $1`,
       [patient_id]
     );
 
@@ -769,22 +819,7 @@ app.get("/api/patient/appointments", authenticateToken, async (req, res) => {
   }
 });
 
-// Route to get appointments for a doctor
-app.get("/api/doctor/appointments", authenticateToken, async (req, res) => {
-  try {
-    const doctor_id = req.user.id;
-    const appointments = await pool.query(
-      "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.description, a.status, p.fname AS patient_fname, p.lname AS patient_lname, p.gender FROM appointments a JOIN patient p ON a.patient_id = p.patient_id WHERE a.doctor_id = $1",
-      [doctor_id]
-    );
-
-    res.json(appointments.rows);
-  } catch (err) {
-    console.error("Error fetching doctor appointments:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
+// Get All Blogs
 app.get("/api/blogs", async (req, res) => {
   try {
     const blogs = await pool.query(
@@ -797,6 +832,7 @@ app.get("/api/blogs", async (req, res) => {
   }
 });
 
+// Get Blog by ID
 app.get("/api/blogs/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -819,6 +855,7 @@ app.get("/api/blogs/:id", async (req, res) => {
   }
 });
 
+// Get All Exercises
 app.get("/api/exercises", async (req, res) => {
   try {
     const exercises = await pool.query(
@@ -831,6 +868,7 @@ app.get("/api/exercises", async (req, res) => {
   }
 });
 
+// Get Exercise by ID
 app.get("/api/exercises/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -854,6 +892,146 @@ app.get("/api/exercises/:id", async (req, res) => {
   }
 });
 
+// Request Password Reset Route
+app.post("/api/request-reset-password", async (req, res) => {
+  const { email, userType } = req.body; // Get email and userType: 'patient', 'doctor', 'partner'
+
+  // Map userType to the correct table name in your database
+  const tableNameMap = {
+    patient: "patient",
+    doctor: "doctors",
+    partner: "partners",
+  };
+  const tableName = tableNameMap[userType];
+
+  if (!tableName) {
+    return res.status(400).json({ message: "Invalid user type" });
+  }
+
+  console.log(`Processing reset for ${userType} with email: ${email}`);
+
+  try {
+    // Find user by email
+    const userResult = await pool.query(
+      `SELECT * FROM ${tableName} WHERE email = $1`,
+      [email]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      console.error("User not found");
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate reset token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiry = new Date(Date.now() + 3600000); // Token valid for 1 hour
+
+    // Save token to database
+    await pool.query(
+      `UPDATE ${tableName} SET reset_token = $1, reset_token_expiry = $2 WHERE email = $3`,
+      [token, expiry, email]
+    );
+
+    console.log(
+      `Reset token saved for ${email}: ${token}, expires at ${expiry}`
+    );
+
+    // Set up email transport using Gmail
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // Correctly set to 'gmail'
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    // Email options
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset Request",
+      html: `<p>You requested a password reset. <a href="http://localhost:3000/reset-password/${userType}/${token}">Click here to reset your password</a></p>`,
+    };
+
+    // Send email with improved error handling
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log("Email sent successfully");
+      res.status(200).json({ message: "Password reset email sent" });
+    } catch (error) {
+      console.error("Error sending email:", error);
+      res.status(500).json({ message: "Error sending email" });
+    }
+  } catch (error) {
+    console.error("Error during password reset request:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Reset Password Route
+app.post("/api/reset-password", async (req, res) => {
+  const { token, newPassword, userType } = req.body;
+
+  // Map userType to the correct table name
+  const tableNameMap = {
+    patient: "patient",
+    doctor: "doctors",
+    partner: "partners",
+  };
+  const tableName = tableNameMap[userType];
+
+  if (!tableName) {
+    console.error("Invalid user type provided:", userType);
+    return res.status(400).json({ message: "Invalid user type" });
+  }
+
+  try {
+    console.log(
+      `Attempting password reset for token: ${token} and userType: ${userType}`
+    );
+
+    // Find user by token and check token expiry
+    const userResult = await pool.query(
+      `SELECT * FROM ${tableName} WHERE reset_token = $1 AND reset_token_expiry > NOW()`,
+      [token]
+    );
+
+    console.log(`User search result for token ${token}:`, userResult.rows);
+
+    if (userResult.rows.length === 0) {
+      console.error("Invalid or expired token for reset:", token);
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const user = userResult.rows[0];
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log(`New hashed password: ${hashedPassword}`);
+
+    // Update user's password and clear reset token
+    const updateResult = await pool.query(
+      `UPDATE ${tableName} SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = $2`,
+      [hashedPassword, token]
+    );
+
+    console.log(`Password update result:`, updateResult);
+
+    if (updateResult.rowCount === 0) {
+      console.error("Failed to update password for user:", user.email);
+      return res.status(500).json({ message: "Failed to reset password" });
+    }
+
+    console.log("Password reset successfully for user:", user.email);
+    res.status(200).json({ message: "Password successfully reset" });
+  } catch (error) {
+    console.error("Error during password reset:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Serve frontend
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/build", "index.html"));
 });

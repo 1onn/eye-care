@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Heading from "./Heading";
 import "./CSS/LoginPatient.css";
+import { Link } from "react-router-dom";
 
 function LoginPatient() {
   const [errors, setErrors] = useState([]);
@@ -42,7 +43,7 @@ function LoginPatient() {
   return (
     <div className="login-container">
       <form onSubmit={handleSubmit} className="login-form">
-        <h1>LOGIN</h1>
+        <h1>LOGIN222</h1>
         {errors.length > 0 && (
           <ul>
             {errors.map((error, index) => (
@@ -58,6 +59,14 @@ function LoginPatient() {
         <input type="password" className="input" name="password" required />
         <input type="submit" className="submit-button" />
       </form>
+      <div>
+        <Link
+          to="/forgot-password"
+          style={{ color: "blue", textDecoration: "underline" }}
+        >
+          Forgot Password?
+        </Link>
+      </div>
     </div>
   );
 }

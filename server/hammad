@@ -12,3 +12,14 @@ Login authentication.
 -bootstrap +tailwind.
 buyer seller store.
 ----------------------------------------
+Login/signup
+- forget password option while logging in.
+- add format for signup like +92 335 9064240.
+- error popup while signing up (like u have type 1334 in name box. is type ke errors, or number nai pura likha).
+
+Verification related work
+- OTP verification or any  kinda verification takay fake email se signup login na ho. 
+
+Appointment
+- while booking appointment, show date today's onward.  
+- in doctor panel add option to cancel appointment.
